@@ -90,7 +90,7 @@ instanceVars = {
       $('<tr class=' + row_class + '><td>' +
         name + '</td><td>' +
         timeSpent + '</td><td>' +
-        productivity + '% </td></tr>'
+        productivity + '% </td><td></td></tr>'
     ));
   },
 
@@ -106,15 +106,16 @@ instanceVars = {
     $("#myTable").find('tbody').append(
       $('<tr><td>' +'<a href="' +
         url + '"">' + url + '</a></td><td>' +
-        timeSpent + '</td><td id = "' + rowId + '">' +
-        productivity + '</td>'
+        timeSpent + '</td><td>' +
+        productivity + '</td>' + 
+        '<td id = "' + rowId + '">' +'</tr>'
     ));
 
     button.appendTo($("#"+rowId));
   },
 
   reclassify_success: function(result) {
-
-  }
+    // Should change the visual representation of the rows related to the url that was reclassified
+  },
 
 }
