@@ -17,7 +17,6 @@ instanceVars = {
 
 	success: function(result){
 		for (var i = 0; i < instanceVars.urls.length; i++) {
-			$('#myTable > tbody:last').append('<tr>...</tr><tr>' +result[instanceVars.urls[i]] + '</tr>');
     	var url = instanceVars.urls[i];
     	var timeSpent = instanceVars.url_to_time[url];
     	var productivity = result[url];

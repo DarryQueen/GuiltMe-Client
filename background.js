@@ -4,10 +4,11 @@ var instanceVars = {
   url_to_time: {},
   update: function(current_url){
     var now = new Date().getTime() / 1000;
-    if(instanceVars.url_to_time.url==undefined){
-      instanceVars.url_to_time[instanceVars.last_url] = now - instanceVars.last_time;
+    var difference = now - instanceVars.last_time;
+    if(instanceVars.url_to_time[instanceVars.last_url] == undefined){
+      instanceVars.url_to_time[instanceVars.last_url] = difference;
     } else {
-      instanceVars.url_to_time[instanceVars.last_url]  = instanceVars.url_to_time[instanceVars.last_url] + difference;
+      instanceVars.url_to_time[instanceVars.last_url] += difference;
     }
     instanceVars.last_url = current_url;
     instanceVars.last_time = now;
@@ -16,7 +17,7 @@ var instanceVars = {
 
 chrome.runtime.onMessage.addListener(
   function(request, sender, sendResponse) {
-      sendResponse(instanceVars.url_to_time)
+      sendResponse(instanceVars.url_to_time);
   });
 
 chrome.tabs.onActivated.addListener(function(activeInfo){
