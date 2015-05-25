@@ -85,22 +85,24 @@ instanceVars = {
   },
 
   add_domain_row: function(name, timeSpent, productivity, row_class) {
-    var row_class = productivity > 50 ? "info" : "danger";
+    var row_class = productivity > 50 ? "info" : "success";
     $("#myTable").find('tbody').append(
       $('<tr class=' + row_class + '><td>' +
         name + '</td><td>' +
         timeSpent + '</td><td>' +
-        productivity + '% </td><td></td></tr>'
+        productivity + '% </td><td></td><td></td></tr>'
     ));
   },
 
   add_url_row: function(url, timeSpent, productivity, rowId) {
     
-    var button = $('<button type="button" class="btn btn-default">Classified Incorrectly</button>');
-    var new_classification = instanceVars.result[url] == "work" ? "procrastination" : "work";
-    var data = {url: url, classification: new_classification};
-    button.click(function() {
-      $.ajax({type: "POST", url: instanceVars.server_datapoint_url, data: data, success: instanceVars.reclassify_success, dataType: "json"});
+    var work_button = $('<button type="button" class="btn btn-primary">Work</button>');
+    var procrastination_button = $('<button type="button" class="btn btn-success">Procrastination</button>');
+    work_button.click(function() {
+      $.ajax({type: "POST", url: instanceVars.server_datapoint_url, data: {url: url, classification: "work"}, success: instanceVars.reclassify_success, dataType: "json"});
+    });
+    procrastination_button.click(function() {
+      $.ajax({type: "POST", url: instanceVars.server_datapoint_url, data: {url: url, classification: "procrastination"}, success: instanceVars.reclassify_success, dataType: "json"});
     });
     
     $("#myTable").find('tbody').append(
@@ -108,10 +110,12 @@ instanceVars = {
         url + '"">' + url + '</a></td><td>' +
         timeSpent + '</td><td>' +
         productivity + '</td>' + 
-        '<td id = "' + rowId + '">' +'</tr>'
+        '<td id ="work' + rowId + '">' +
+        '<td id ="procrastination' + rowId + '">' +'</tr>'
     ));
 
-    button.appendTo($("#"+rowId));
+    work_button.appendTo($("#work"+rowId));
+    procrastination_button.appendTo($("#procrastination"+rowId));
   },
 
   reclassify_success: function(result) {
