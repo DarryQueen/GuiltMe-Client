@@ -7,6 +7,10 @@ $(document).ready(function() {
 });
 
 instanceVars = {
+
+  server_classify_url: "http://localhost:3000/classify",
+  server_datapoint_url: "http://localhost:3000/datapoint",
+
   sort_by_domain: function(){
     instanceVars.domain_to_url = {};
     instanceVars.domain_to_time = {};
@@ -30,12 +34,11 @@ instanceVars = {
 
 	send_request: function(){
     var data = {"history": instanceVars.urls};
-    var url = "http://localhost:3000/classify";
-    $.ajax({type: "POST", url: url, data: data, success: instanceVars.success, dataType: "json"});
+    $.ajax({type: "POST", url: instanceVars.server_classify_url, data: data, success: instanceVars.success, dataType: "json"});
     instanceVars.sort_by_domain();
 	 },
 
-  set_domain_productivity: function(result) {
+  set_domain_productivity: function() {
     instanceVars.domain_to_productivity = {};
     for (var i = 0; i < instanceVars.domains.length; i++){
       var domain = instanceVars.domains[i];
@@ -43,24 +46,27 @@ instanceVars = {
       var urls = instanceVars.domain_to_url[domain];
       for (var j = 0; j < urls.length; j++){
         var url = urls[j];
-        var classification = result[url];
+        var classification = instanceVars.result[url];
         counts[classification] += 1;
       }
-      instanceVars.domain_to_productivity[domain] = (100 * counts.work / (counts.work + counts.procrastination)).toFixed(0) + "%"
+      instanceVars.domain_to_productivity[domain] = (100 * counts.work / (counts.work + counts.procrastination)).toFixed(0);
     }
   },
 
 	success: function(result) {
-    instanceVars.set_domain_productivity(result);
-    for (var i = 0; i < instanceVars.domains.length; i++) {
+    instanceVars.result = result;
+    instanceVars.set_domain_productivity();
+    var rowId = 0;
+    for (var i = instanceVars.domains.length - 1; i >= 0; i--) {
       var domain = instanceVars.domains[i];
-      instanceVars.add_row(domain, instanceVars.format_time(instanceVars.domain_to_time[domain]), instanceVars.domain_to_productivity[domain], "success");
+      instanceVars.add_domain_row(domain, instanceVars.format_time(instanceVars.domain_to_time[domain]), instanceVars.domain_to_productivity[domain]);
       var urls = instanceVars.domain_to_url[domain];
       for (var j = 0; j < urls.length; j++) {
         var url = urls[j];
         var timeSpent = instanceVars.format_time(instanceVars.url_to_time[url]);
         var productivity = result[url];
-        instanceVars.add_row(url, timeSpent, productivity);
+        instanceVars.add_url_row(url, timeSpent, productivity, rowId);
+        rowId++;
       }
     }
 	},
@@ -78,14 +84,37 @@ instanceVars = {
     return time;
   },
 
-  add_row: function(name, timeSpent, productivity, rowclass) {
-    rowclass = typeof rowclass !== 'undefined' ? rowclass : "";
+  add_domain_row: function(name, timeSpent, productivity, row_class) {
+    var row_class = productivity > 50 ? "info" : "danger";
     $("#myTable").find('tbody').append(
-      $('<tr class=' + rowclass + '><td>' +
+      $('<tr class=' + row_class + '><td>' +
         name + '</td><td>' +
         timeSpent + '</td><td>' +
-        productivity + '</td></tr>'
+        productivity + '% </td></tr>'
     ));
-  }, 
+  },
+
+  add_url_row: function(url, timeSpent, productivity, rowId) {
+    
+    var button = $('<button type="button" class="btn btn-default">Classified Incorrectly</button>');
+    var new_classification = instanceVars.result[url] == "work" ? "procrastination" : "work";
+    var data = {url: url, classification: new_classification};
+    button.click(function() {
+      $.ajax({type: "POST", url: instanceVars.server_datapoint_url, data: data, success: instanceVars.reclassify_success, dataType: "json"});
+    });
+    
+    $("#myTable").find('tbody').append(
+      $('<tr><td>' +'<a href="' +
+        url + '"">' + url + '</a></td><td>' +
+        timeSpent + '</td><td id = "' + rowId + '">' +
+        productivity + '</td>'
+    ));
+
+    button.appendTo($("#"+rowId));
+  },
+
+  reclassify_success: function(result) {
+
+  }
 
 }

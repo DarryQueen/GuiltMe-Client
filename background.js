@@ -17,6 +17,7 @@ var instanceVars = {
 
 chrome.runtime.onMessage.addListener(
   function(request, sender, sendResponse) {
+      instanceVars.url_to_time["chrome://newtab/"] = undefined;
       sendResponse(instanceVars.url_to_time);
   });
 
