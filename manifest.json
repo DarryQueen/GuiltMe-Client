@@ -10,12 +10,18 @@
   },
 
   "background": {
-    "scripts": ["background.js"]
+    "scripts": ["jquery-2.1.4.min.js", "background.js"]
   },
+
+  "content_scripts": [ {
+    "js": [ "jquery-2.1.4.min.js", "window.js"],
+    "matches": [ "*://*.newtab/*"]
+  }],
 
   "permissions": [
     "tabs",
     "activeTab",
-    "https://ajax.googleapis.com/"
+    "https://ajax.googleapis.com/",
+    "http://localhost:3000/"
   ]
 }
