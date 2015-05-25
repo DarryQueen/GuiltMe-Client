@@ -49,7 +49,7 @@ instanceVars = {
         var classification = instanceVars.result[url];
         counts[classification] += 1;
       }
-      instanceVars.domain_to_productivity[domain] = (100 * counts.work / (counts.work + counts.procrastination)).toFixed(0);
+      instanceVars.domain_to_productivity[domain] = counts;
     }
   },
 
@@ -59,19 +59,29 @@ instanceVars = {
     var rowId = 0;
     for (var i = instanceVars.domains.length - 1; i >= 0; i--) {
       var domain = instanceVars.domains[i];
-      instanceVars.add_domain_row(domain, instanceVars.format_time(instanceVars.domain_to_time[domain]), instanceVars.domain_to_productivity[domain]);
+      instanceVars.add_domain_row(domain, instanceVars.format_time(domain),i);
       var urls = instanceVars.domain_to_url[domain];
       for (var j = 0; j < urls.length; j++) {
         var url = urls[j];
-        var timeSpent = instanceVars.format_time(instanceVars.url_to_time[url]);
+        var timeSpent = instanceVars.format_time(url);
         var productivity = result[url];
-        instanceVars.add_url_row(url, timeSpent, productivity, rowId);
+        instanceVars.add_url_row(url, timeSpent, productivity, rowId, i);
         rowId++;
       }
     }
 	},
 
-  format_time: function (secs) {
+  get_probability: function(domain) {
+    var counts = instanceVars.domain_to_productivity[domain];
+    return (100 * counts.work / (counts.work + counts.procrastination)).toFixed(0)
+  },
+
+  format_productivity: function(domain) {
+    return instanceVars.get_probability(domain) + "%";
+  },
+
+  format_time: function (name) {
+    var secs = instanceVars.domain_to_time[name] || instanceVars.url_to_time[name];
     var hours = Math.floor(secs / (60 * 60));
     var divisor_for_minutes = secs % (60 * 60);
     var minutes = Math.floor(divisor_for_minutes / 60);
@@ -84,42 +94,71 @@ instanceVars = {
     return time;
   },
 
-  add_domain_row: function(name, timeSpent, productivity, row_class) {
+  add_domain_row: function(name, timeSpent, domain_id) {
+    var productivity = instanceVars.get_probability(name);
     var row_class = productivity > 50 ? "info" : "success";
     $("#myTable").find('tbody').append(
-      $('<tr class=' + row_class + '><td>' +
+      $('<tr class=' + row_class + ' id=domain' + domain_id + '><td>' +
         name + '</td><td>' +
         timeSpent + '</td><td>' +
-        productivity + '% </td><td></td><td></td></tr>'
+        instanceVars.format_productivity(name) + '</td></tr>'
     ));
   },
 
-  add_url_row: function(url, timeSpent, productivity, rowId) {
-    
-    var work_button = $('<button type="button" class="btn btn-primary">Work</button>');
-    var procrastination_button = $('<button type="button" class="btn btn-success">Procrastination</button>');
+  add_url_row: function(url, timeSpent, productivity, rowId, domain_id) {
+    var work_button_class = productivity == "work" ? "btn btn-primary" : "btn btn-default";
+    var procrastination_button_class = productivity == "procrastination" ? "btn btn-success" : "btn btn-default";
+    var work_button = $('<button type="button" class="'+work_button_class+'">Work</button>');
+    var procrastination_button = $('<button type="button" class="'+procrastination_button_class+'">Procrastination</button>');
+    var success_function = instanceVars.reclassify_success(work_button, procrastination_button, domain_id);
     work_button.click(function() {
-      $.ajax({type: "POST", url: instanceVars.server_datapoint_url, data: {url: url, classification: "work"}, success: instanceVars.reclassify_success, dataType: "json"});
+      $.ajax({type: "POST", url: instanceVars.server_datapoint_url, data: {url: url, classification: "work"}, success: success_function, dataType: "json"});
+
     });
     procrastination_button.click(function() {
-      $.ajax({type: "POST", url: instanceVars.server_datapoint_url, data: {url: url, classification: "procrastination"}, success: instanceVars.reclassify_success, dataType: "json"});
+      $.ajax({type: "POST", url: instanceVars.server_datapoint_url, data: {url: url, classification: "procrastination"}, success: success_function, dataType: "json"});
     });
-    
     $("#myTable").find('tbody').append(
       $('<tr><td>' +'<a href="' +
-        url + '"">' + url + '</a></td><td>' +
-        timeSpent + '</td><td>' +
-        productivity + '</td>' + 
-        '<td id ="work' + rowId + '">' +
-        '<td id ="procrastination' + rowId + '">' +'</tr>'
+        url + '">' + url + '</a></td><td>' +
+        timeSpent + '</td><td id =' + rowId + '></td></tr>'
     ));
 
-    work_button.appendTo($("#work"+rowId));
-    procrastination_button.appendTo($("#procrastination"+rowId));
+    work_button.appendTo($("#"+rowId));
+    procrastination_button.appendTo($("#"+rowId));
   },
 
-  reclassify_success: function(result) {
-    // Should change the visual representation of the rows related to the url that was reclassified
+  reclassify_success: function(work_button, procrastination_button, domain_id) {
+    return function(result){
+      instanceVars.result[result.url] = result.classification;
+      var domain_row = $('#domain' + domain_id);
+      var domain = domain_row.children()[0].textContent;
+      var productivity = domain_row.children()[2].textContent;
+      var counts = instanceVars.domain_to_productivity[domain];
+      if (result.classification == "work") {
+        if (work_button.attr('class') == "btn btn-default") {
+          work_button.removeClass('btn btn-default').addClass('btn btn-primary');
+          procrastination_button.removeClass('btn btn-success').addClass('btn btn-default');
+          counts.work ++;
+          counts.procrastination --;
+        }
+      } else {
+        if (work_button.attr('class') == "btn btn-primary") {
+          work_button.removeClass('btn btn-primary').addClass('btn btn-default');
+          procrastination_button.removeClass('btn btn-default').addClass('btn btn-success');
+          counts.work --;
+          counts.procrastination ++;
+        }
+      }
+      var probability = instanceVars.get_probability(domain);
+      var row_class = domain_row.attr('class');
+      if (probability < 50){
+        domain_row.removeClass(row_class).addClass('success');
+      } else {
+        domain_row.removeClass(row_class).addClass('info');
+      }
+      $(domain_row.children()[2]).html(instanceVars.format_productivity(domain));
+    }
   },
 
 }
