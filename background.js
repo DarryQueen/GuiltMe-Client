@@ -11,30 +11,30 @@ var instanceVars = {
     }
     instanceVars.last_url = current_url;
     instanceVars.last_time = now;
-  }, 
-  send_request: function(){
-    url_to_time["chrome://newtab/"] = undefined;
-    var jsonObject = JSON.stringify(instanceVars.url_to_time);
-    //make request to web server with json object
-
   }
 }
+
+chrome.runtime.onMessage.addListener(
+  function(request, sender, sendResponse) {
+      sendResponse(instanceVars.url_to_time)
+  });
 
 chrome.tabs.onActivated.addListener(function(activeInfo){
   var tabId = activeInfo.tabId;
   chrome.tabs.get(tabId, function(tab){
-    console.log("tab activate");
+    // console.log("tab activate");
+    // console.log(tabId);
     instanceVars.update(tab.url);
-    console.log(instanceVars.url_to_time);
+    // console.log(instanceVars.url_to_time);
   });
 });
 
 chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab){
   chrome.tabs.get(tabId, function(tab){
     if(tab.active){
-      console.log("tab update");
+      // console.log("tab update");
       instanceVars.update(tab.url);
-      console.log(instanceVars.url_to_time);
+      // console.log(instanceVars.url_to_time);
     }  
   });
 });
@@ -42,11 +42,11 @@ chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab){
 chrome.windows.onFocusChanged.addListener(function(windowId){
   chrome.windows.get(windowId,function(window){
     for(i=0; i< window.tabs.length; i++){
-      var tab =window.tabs[i];
+      var tab = window.tabs[i];
       if(tab.active){
-        console.log("window focus");
+        // console.log("window focus");
         instanceVars.update(tab.url);
-        console.log(instanceVars.url_to_time);
+        // console.log(instanceVars.url_to_time);
       }
     }
   });
