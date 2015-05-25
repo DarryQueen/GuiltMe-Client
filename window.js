@@ -1,27 +1,91 @@
-
 $(document).ready(function() {
-  // sends a request to background.js to retrieve the most recent data 
   chrome.runtime.sendMessage({message: "send_request"}, function(response) {
   	instanceVars.url_to_time = response;
+    instanceVars.urls = Object.keys(instanceVars.url_to_time);
   	instanceVars.send_request(response);
   });
 });
 
 instanceVars = {
+  sort_by_domain: function(){
+    instanceVars.domain_to_url = {};
+    instanceVars.domain_to_time = {};
+    instanceVars.domains = [];
+    for (var i = 0; i < instanceVars.urls.length; i++){
+      var url = instanceVars.urls[i];
+      var domain = instanceVars.get_domain(url);
+      if (instanceVars.domain_to_url[domain] == undefined) {
+        instanceVars.domains.push(domain);
+        instanceVars.domain_to_url[domain] = [];
+        instanceVars.domain_to_time[domain] = 0;
+      }
+      instanceVars.domain_to_url[domain].push(url);
+      instanceVars.domain_to_time[domain] += instanceVars.url_to_time[url];
+    }
+  },
+
+  get_domain: function(url){
+    return new URL(url).hostname
+  },
+
 	send_request: function(){
-		instanceVars.urls = Object.keys(instanceVars.url_to_time);
     var data = {"history": instanceVars.urls};
     var url = "http://localhost:3000/classify";
     $.ajax({type: "POST", url: url, data: data, success: instanceVars.success, dataType: "json"});
+    instanceVars.sort_by_domain();
 	 },
 
-	success: function(result){
-		for (var i = 0; i < instanceVars.urls.length; i++) {
-    	var url = instanceVars.urls[i];
-    	var timeSpent = instanceVars.url_to_time[url];
-    	var productivity = result[url];
-    	$("#myTable").find('tbody').append($('<tr>')
-        .append($('<td>'+url+'</td>'+'<td>'+timeSpent+'</td>'+'<td>'+productivity+'</td>'+'</tr>')));
-		}
-	}
+  set_domain_productivity: function(result) {
+    instanceVars.domain_to_productivity = {};
+    for (var i = 0; i < instanceVars.domains.length; i++){
+      var domain = instanceVars.domains[i];
+      var counts = {work: 0, procrastination: 0};
+      var urls = instanceVars.domain_to_url[domain];
+      for (var j = 0; j < urls.length; j++){
+        var url = urls[j];
+        var classification = result[url];
+        counts[classification] += 1;
+      }
+      instanceVars.domain_to_productivity[domain] = (100 * counts.work / (counts.work + counts.procrastination)).toFixed(0) + "%"
+    }
+  },
+
+	success: function(result) {
+    instanceVars.set_domain_productivity(result);
+    for (var i = 0; i < instanceVars.domains.length; i++) {
+      var domain = instanceVars.domains[i];
+      instanceVars.add_row(domain, instanceVars.format_time(instanceVars.domain_to_time[domain]), instanceVars.domain_to_productivity[domain], "success");
+      var urls = instanceVars.domain_to_url[domain];
+      for (var j = 0; j < urls.length; j++) {
+        var url = urls[j];
+        var timeSpent = instanceVars.format_time(instanceVars.url_to_time[url]);
+        var productivity = result[url];
+        instanceVars.add_row(url, timeSpent, productivity);
+      }
+    }
+	},
+
+  format_time: function (secs) {
+    var hours = Math.floor(secs / (60 * 60));
+    var divisor_for_minutes = secs % (60 * 60);
+    var minutes = Math.floor(divisor_for_minutes / 60);
+    var divisor_for_seconds = divisor_for_minutes % 60;
+    var seconds = Math.ceil(divisor_for_seconds);
+    var time = ""
+    if (hours > 0){time += hours + "h ";}
+    if (minutes > 0){time += minutes + "m ";}
+    if (seconds > 0){time += seconds + "s";}
+    return time;
+  },
+
+  add_row: function(name, timeSpent, productivity, rowclass) {
+    rowclass = typeof rowclass !== 'undefined' ? rowclass : "";
+    $("#myTable").find('tbody').append(
+      $('<tr class=' + rowclass + '><td>' +
+        name + '</td><td>' +
+        timeSpent + '</td><td>' +
+        productivity + '</td></tr>'
+    ));
+  }, 
+
 }

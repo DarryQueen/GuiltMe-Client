@@ -14,7 +14,7 @@
   },
 
   "content_scripts": [ {
-    "js": [ "jquery-2.1.4.min.js", "window.js"],
+    "js": ["jquery-2.1.4.min.js", "window.js"],
     "matches": [ "*://*.newtab/*"]
   }],
 
