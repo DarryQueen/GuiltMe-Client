@@ -2,7 +2,7 @@ $(document).ready(function() {
   chrome.runtime.sendMessage({message: "send_request"}, function(response) {
   	instanceVars.url_to_time = response;
     instanceVars.urls = Object.keys(instanceVars.url_to_time);
-  	instanceVars.send_request(response);
+  	instanceVars.send_request();
   });
 });
 
@@ -10,6 +10,12 @@ instanceVars = {
 
   server_classify_url: "http://localhost:3000/classify",
   server_datapoint_url: "http://localhost:3000/datapoint",
+
+  send_request: function(){
+    var data = {"history": instanceVars.urls};
+    $.ajax({type: "POST", url: instanceVars.server_classify_url, data: data, success: instanceVars.success, dataType: "json"});
+    instanceVars.sort_by_domain();
+   },
 
   sort_by_domain: function(){
     instanceVars.domain_to_url = {};
@@ -31,12 +37,6 @@ instanceVars = {
   get_domain: function(url){
     return new URL(url).hostname
   },
-
-	send_request: function(){
-    var data = {"history": instanceVars.urls};
-    $.ajax({type: "POST", url: instanceVars.server_classify_url, data: data, success: instanceVars.success, dataType: "json"});
-    instanceVars.sort_by_domain();
-	 },
 
   set_domain_productivity: function() {
     instanceVars.domain_to_productivity = {};
@@ -118,9 +118,10 @@ instanceVars = {
     procrastination_button.click(function() {
       $.ajax({type: "POST", url: instanceVars.server_datapoint_url, data: {url: url, classification: "procrastination"}, success: success_function, dataType: "json"});
     });
+    var truncated_url = url.length > 100 ? url.substring(0, 100) + "..." : url
     $("#myTable").find('tbody').append(
       $('<tr><td>' +'<a href="' +
-        url + '">' + url + '</a></td><td>' +
+        url + '">' + truncated_url + '</a></td><td>' +
         timeSpent + '</td><td id =' + rowId + '></td></tr>'
     ));
 

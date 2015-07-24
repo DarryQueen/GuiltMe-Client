@@ -5,6 +5,7 @@
   <link rel="stylesheet" href="bootstrap/font-awesome.min.css">
   <link rel="stylesheet" href="css/guiltme.css">
   <script src="bootstrap/bootstrap.min.js"></script>
+  <script src="jExpand.js"></script>
 </head>
 
 <body>
@@ -14,7 +15,7 @@
 <script src="jquery-2.1.4.min.js"></script>
 <script src="window.js"></script>
 <div class="panel panel-default sites-panel">
-  <table id="myTable" class="table table-bordered table-hover">
+  <table id="myTable" class="table table-bordered table-hover" class="table-responsive">
     <thead>
       <tr>
         <th>Website</th>
@@ -28,5 +29,65 @@
 </panel>
 
 </div>
+
+
+<div class="col-xs-6">
+  <h2 class="sub-header">Work</h2>
+    <div class="table-responsive">
+      <table id="work_table" class="table table-striped">
+        <thead>
+          <tr>
+            <th>Site</th>
+            <th >Time Spent</th>
+            <th>Productivity</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              1,001
+            </td>
+            <td>
+              1,001
+            </td>
+            <td>
+              1,001
+              <button type="button" class="btn btn-primary">Procrastination</button>
+              <button type="button" class="btn btn-secondary">Work</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+</div>
+<div class="col-xs-6">
+  <h2 class="sub-header">Work</h2>
+    <div class="table-responsive">
+      <table id="prod_table" class="table table-striped">
+        <thead>
+          <tr>
+            <th>Site</th>
+            <th >Time Spent</th>
+            <th>Productivity</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              1,001
+            </td>
+            <td>1,001</td>
+            <td>
+              1,001
+              <button type="button" class="btn btn-primary">Procrastination</button>
+              <button type="button" class="btn btn-secondary">Work</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+</div>
+
+
 </body>
 </html>
